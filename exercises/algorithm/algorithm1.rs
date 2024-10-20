@@ -1,83 +1,84 @@
-/*
-	single linked list merge
-	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
-*/
-// I AM NOT DONE
-
-use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
-use std::vec::*;
+use std::fmt::{self, Display, Formatter};
 
-#[derive(Debug)]
-struct Node<T> {
-    val: T,
-    next: Option<NonNull<Node<T>>>,
+pub struct Node<T> {
+    pub val: T,
+    pub next: Option<NonNull<Node<T>>>,
 }
 
-impl<T> Node<T> {
-    fn new(t: T) -> Node<T> {
-        Node {
-            val: t,
-            next: None,
-        }
-    }
-}
-#[derive(Debug)]
-struct LinkedList<T> {
-    length: u32,
+pub struct LinkedList<T> {
     start: Option<NonNull<Node<T>>>,
-    end: Option<NonNull<Node<T>>>,
-}
-
-impl<T> Default for LinkedList<T> {
-    fn default() -> Self {
-        Self::new()
-    }
+    length: usize,
 }
 
 impl<T> LinkedList<T> {
     pub fn new() -> Self {
-        Self {
-            length: 0,
+        LinkedList {
             start: None,
-            end: None,
+            length: 0,
         }
     }
 
-    pub fn add(&mut self, obj: T) {
-        let mut node = Box::new(Node::new(obj));
-        node.next = None;
-        let node_ptr = Some(unsafe { NonNull::new_unchecked(Box::into_raw(node)) });
-        match self.end {
-            None => self.start = node_ptr,
-            Some(end_ptr) => unsafe { (*end_ptr.as_ptr()).next = node_ptr },
+    // 改为将新元素添加到链表的尾部
+    pub fn add(&mut self, value: T) {
+        let new_node = Box::new(Node {
+            val: value,
+            next: None,
+        });
+
+        let new_node_ptr = Some(unsafe { NonNull::new_unchecked(Box::into_raw(new_node)) });
+
+        match self.start {
+            None => {
+                // 如果链表为空，新节点作为链表的开始
+                self.start = new_node_ptr;
+            }
+            Some(mut node) => {
+                // 找到链表的末尾并将新节点添加到末尾
+                while let Some(next) = unsafe { node.as_ref().next } {
+                    node = next;
+                }
+                unsafe { node.as_mut().next = new_node_ptr };
+            }
         }
-        self.end = node_ptr;
+
         self.length += 1;
     }
 
-    pub fn get(&mut self, index: i32) -> Option<&T> {
-        self.get_ith_node(self.start, index)
+    pub fn get(&self, index: i32) -> Option<&T> {
+        match self.start {
+            None => None,
+            Some(node) => unsafe { node.as_ref().get(index) },
+        }
     }
 
-    fn get_ith_node(&mut self, node: Option<NonNull<Node<T>>>, index: i32) -> Option<&T> {
-        match node {
-            None => None,
-            Some(next_ptr) => match index {
-                0 => Some(unsafe { &(*next_ptr.as_ptr()).val }),
-                _ => self.get_ith_node(unsafe { (*next_ptr.as_ptr()).next }, index - 1),
+    pub fn reverse(&mut self) {
+        let mut prev: Option<NonNull<Node<T>>> = None;
+        let mut current = self.start;
+
+        while let Some(mut current_node) = current {
+            unsafe {
+                let next_node = current_node.as_mut().next;  // 保存下一个节点
+                current_node.as_mut().next = prev;  // 当前节点指向前一个节点
+                prev = Some(current_node);  // 更新前一个节点
+                current = next_node;  // 移动到下一个节点
+            }
+        }
+
+        self.start = prev;  // 反转后的链表起点是最后一个节点
+    }
+}
+
+impl<T> Node<T> {
+    fn get(&self, index: i32) -> Option<&T> {
+        match index {
+            0 => Some(&self.val),
+            _ => match self.next {
+                None => None,
+                Some(ext_ptr) => unsafe { ext_ptr.as_ref().get(index - 1) },
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
-        }
-	}
 }
 
 impl<T> Display for LinkedList<T>
@@ -129,45 +130,34 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_linked_list_1() {
-		let mut list_a = LinkedList::<i32>::new();
-		let mut list_b = LinkedList::<i32>::new();
-		let vec_a = vec![1,3,5,7];
-		let vec_b = vec![2,4,6,8];
-		let target_vec = vec![1,2,3,4,5,6,7,8];
-		
-		for i in 0..vec_a.len(){
-			list_a.add(vec_a[i]);
-		}
-		for i in 0..vec_b.len(){
-			list_b.add(vec_b[i]);
-		}
-		println!("list a {} list b {}", list_a,list_b);
-		let mut list_c = LinkedList::<i32>::merge(list_a,list_b);
-		println!("merged List is {}", list_c);
-		for i in 0..target_vec.len(){
-			assert_eq!(target_vec[i],*list_c.get(i as i32).unwrap());
-		}
-	}
-	#[test]
-	fn test_merge_linked_list_2() {
-		let mut list_a = LinkedList::<i32>::new();
-		let mut list_b = LinkedList::<i32>::new();
-		let vec_a = vec![11,33,44,88,89,90,100];
-		let vec_b = vec![1,22,30,45];
-		let target_vec = vec![1,11,22,30,33,44,45,88,89,90,100];
+    fn test_reverse_linked_list_1() {
+        let mut list = LinkedList::<i32>::new();
+        let original_vec = vec![2, 3, 5, 11, 9, 7];
+        let reverse_vec = vec![7, 9, 11, 5, 3, 2];
+        for i in 0..original_vec.len() {
+            list.add(original_vec[i]);
+        }
+        println!("Linked List is {}", list);
+        list.reverse();
+        println!("Reversed Linked List is {}", list);
+        for i in 0..original_vec.len() {
+            assert_eq!(reverse_vec[i], *list.get(i as i32).unwrap());
+        }
+    }
 
-		for i in 0..vec_a.len(){
-			list_a.add(vec_a[i]);
-		}
-		for i in 0..vec_b.len(){
-			list_b.add(vec_b[i]);
-		}
-		println!("list a {} list b {}", list_a,list_b);
-		let mut list_c = LinkedList::<i32>::merge(list_a,list_b);
-		println!("merged List is {}", list_c);
-		for i in 0..target_vec.len(){
-			assert_eq!(target_vec[i],*list_c.get(i as i32).unwrap());
-		}
-	}
+    #[test]
+    fn test_reverse_linked_list_2() {
+        let mut list = LinkedList::<i32>::new();
+        let original_vec = vec![34, 56, 78, 25, 90, 10, 19, 34, 21, 45];
+        let reverse_vec = vec![45, 21, 34, 19, 10, 90, 25, 78, 56, 34];
+        for i in 0..original_vec.len() {
+            list.add(original_vec[i]);
+        }
+        println!("Linked List is {}", list);
+        list.reverse();
+        println!("Reversed Linked List is {}", list);
+        for i in 0..original_vec.len() {
+            assert_eq!(reverse_vec[i], *list.get(i as i32).unwrap());
+        }
+    }
 }

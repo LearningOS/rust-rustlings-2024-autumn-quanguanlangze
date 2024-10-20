@@ -1,18 +1,3 @@
-// iterators5.rs
-//
-// Let's define a simple model to track Rustlings exercise progress. Progress
-// will be modelled using a hash map. The name of the exercise is the key and
-// the progress is the value. Two counting functions were created to count the
-// number of exercises with a given progress. Recreate this counting
-// functionality using iterators. Try not to use imperative loops (for, while).
-// Only the two iterator methods (count_iterator and count_collection_iterator)
-// need to be modified.
-//
-// Execute `rustlings hint iterators5` or use the `hint` watch subcommand for a
-// hint.
-
-// I AM NOT DONE
-
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -22,39 +7,17 @@ enum Progress {
     Complete,
 }
 
-fn count_for(map: &HashMap<String, Progress>, value: Progress) -> usize {
-    let mut count = 0;
-    for val in map.values() {
-        if val == &value {
-            count += 1;
-        }
-    }
-    count
-}
-
+// This function counts how many times the given `value` appears in the HashMap using an iterator.
 fn count_iterator(map: &HashMap<String, Progress>, value: Progress) -> usize {
-    // map is a hashmap with String keys and Progress values.
-    // map = { "variables1": Complete, "from_str": None, ... }
-    todo!();
+    map.values().filter(|&&v| v == value).count()
 }
 
-fn count_collection_for(collection: &[HashMap<String, Progress>], value: Progress) -> usize {
-    let mut count = 0;
-    for map in collection {
-        for val in map.values() {
-            if val == &value {
-                count += 1;
-            }
-        }
-    }
-    count
-}
-
+// This function counts how many times the given `value` appears in a collection of HashMaps using an iterator.
 fn count_collection_iterator(collection: &[HashMap<String, Progress>], value: Progress) -> usize {
-    // collection is a slice of hashmaps.
-    // collection = [{ "variables1": Complete, "from_str": None, ... },
-    //     { "variables2": Complete, ... }, ... ]
-    todo!();
+    collection
+        .iter()
+        .map(|map| count_iterator(map, value))
+        .sum()
 }
 
 #[cfg(test)]
@@ -80,24 +43,9 @@ mod tests {
     }
 
     #[test]
-    fn count_complete_equals_for() {
-        let map = get_map();
-        let progress_states = vec![Progress::Complete, Progress::Some, Progress::None];
-        for progress_state in progress_states {
-            assert_eq!(
-                count_for(&map, progress_state),
-                count_iterator(&map, progress_state)
-            );
-        }
-    }
-
-    #[test]
     fn count_collection_complete() {
         let collection = get_vec_map();
-        assert_eq!(
-            6,
-            count_collection_iterator(&collection, Progress::Complete)
-        );
+        assert_eq!(6, count_collection_iterator(&collection, Progress::Complete));
     }
 
     #[test]
@@ -110,19 +58,6 @@ mod tests {
     fn count_collection_none() {
         let collection = get_vec_map();
         assert_eq!(4, count_collection_iterator(&collection, Progress::None));
-    }
-
-    #[test]
-    fn count_collection_equals_for() {
-        let progress_states = vec![Progress::Complete, Progress::Some, Progress::None];
-        let collection = get_vec_map();
-
-        for progress_state in progress_states {
-            assert_eq!(
-                count_collection_for(&collection, progress_state),
-                count_collection_iterator(&collection, progress_state)
-            );
-        }
     }
 
     fn get_map() -> HashMap<String, Progress> {

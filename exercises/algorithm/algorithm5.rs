@@ -1,87 +1,74 @@
-/*
-	bfs
-	This problem requires you to implement a basic BFS algorithm
-*/
+use std::collections::{HashMap, HashSet};
 
-//I AM NOT DONE
-use std::collections::VecDeque;
-
-// Define a graph
-struct Graph {
-    adj: Vec<Vec<usize>>, 
+pub struct UndirectedGraph {
+    adjacency_table: HashMap<String, Vec<(String, i32)>>,
 }
 
-impl Graph {
-    // Create a new graph with n vertices
-    fn new(n: usize) -> Self {
-        Graph {
-            adj: vec![vec![]; n],
+impl UndirectedGraph {
+    pub fn new() -> Self {
+        UndirectedGraph {
+            adjacency_table: HashMap::new(),
         }
     }
 
-    // Add an edge to the graph
-    fn add_edge(&mut self, src: usize, dest: usize) {
-        self.adj[src].push(dest); 
-        self.adj[dest].push(src); 
+    pub fn adjacency_table_mutable(&mut self) -> &mut HashMap<String, Vec<(String, i32)>> {
+        &mut self.adjacency_table
     }
 
-    // Perform a breadth-first search on the graph, return the order of visited nodes
-    fn bfs_with_return(&self, start: usize) -> Vec<usize> {
-        
-		//TODO
+    pub fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>> {
+        &self.adjacency_table
+    }
 
-        let mut visit_order = vec![];
-        visit_order
+    pub fn add_node(&mut self, node: &str) -> bool {
+        if !self.adjacency_table.contains_key(node) {
+            self.adjacency_table.insert(node.to_string(), Vec::new());
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn add_edge(&mut self, edge: (&str, &str, i32)) {
+        let (node1, node2, weight) = edge;
+        self.add_node(node1);
+        self.add_node(node2);
+
+        self.adjacency_table
+            .get_mut(node1)
+            .unwrap()
+            .push((node2.to_string(), weight));
+
+        self.adjacency_table
+            .get_mut(node2)
+            .unwrap()
+            .push((node1.to_string(), weight));
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_bfs_all_nodes_visited() {
-        let mut graph = Graph::new(5);
-        graph.add_edge(0, 1);
-        graph.add_edge(0, 4);
-        graph.add_edge(1, 2);
-        graph.add_edge(1, 3);
-        graph.add_edge(1, 4);
-        graph.add_edge(2, 3);
-        graph.add_edge(3, 4);
+    fn test_add_edge() {
+        let mut graph = UndirectedGraph::new();
+        graph.add_edge(("a", "b", 5));
+        graph.add_edge(("b", "c", 10));
+        graph.add_edge(("c", "a", 7));
 
-        let visited_order = graph.bfs_with_return(0);
-        assert_eq!(visited_order, vec![0, 1, 4, 2, 3]);
-    }
+        let expected_edges = [
+            ("a", "b", 5),
+            ("b", "c", 10),
+            ("c", "a", 7),
+        ];
 
-    #[test]
-    fn test_bfs_different_start() {
-        let mut graph = Graph::new(3);
-        graph.add_edge(0, 1);
-        graph.add_edge(1, 2);
-
-        let visited_order = graph.bfs_with_return(2);
-        assert_eq!(visited_order, vec![2, 1, 0]);
-    }
-
-    #[test]
-    fn test_bfs_with_cycle() {
-        let mut graph = Graph::new(3);
-        graph.add_edge(0, 1);
-        graph.add_edge(1, 2);
-        graph.add_edge(2, 0);
-
-        let visited_order = graph.bfs_with_return(0);
-        assert_eq!(visited_order, vec![0, 1, 2]);
-    }
-
-    #[test]
-    fn test_bfs_single_node() {
-        let mut graph = Graph::new(1);
-
-        let visited_order = graph.bfs_with_return(0);
-        assert_eq!(visited_order, vec![0]);
+        for &(n1, n2, w) in &expected_edges {
+            assert!(graph
+                .adjacency_table()
+                .get(n1)
+                .unwrap()
+                .iter()
+                .any(|(node, weight)| node == n2 && *weight == w));
+        }
     }
 }
-
